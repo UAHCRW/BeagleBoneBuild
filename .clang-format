@@ -1,0 +1,54 @@
+---
+Standard: Cpp11
+BasedOnStyle: Microsoft  
+
+IndentWidth: 4
+TabWidth: 0
+ContinuationIndentWidth: 0
+AccessModifierOffset: 0
+ColumnLimit: 120
+UseTab: Never
+
+AllowShortIfStatementsOnASingleLine: true
+AllowShortLoopsOnASingleLine : true
+AllowShortBlocksOnASingleLine: true
+IndentCaseLabels: true
+
+PointerAlignment: Left
+
+AlignTrailingComments: true
+AlignConsecutiveAssignments: true
+AllowShortCaseLabelsOnASingleLine: true
+
+AlignConsecutiveMacros: Consecutive 
+
+AllowShortFunctionsOnASingleLine: Inline 
+
+BreakBeforeBraces: Allman
+
+NamespaceIndentation: All
+FixNamespaceComments: false
+
+IndentPPDirectives: AfterHash
+IndentAccessModifiers: false
+IndentGotoLabels: false
+CompactNamespaces: true
+
+BreakBeforeBraces: Custom 
+BraceWrapping:
+  AfterStruct: true
+  AfterClass: true
+  AfterControlStatement: true
+  # AfterControlStatement: MultiLine
+  IndentBraces: false
+  AfterNamespace: true
+  AfterFunction: true
+  AfterUnion: true
+  AfterExternBlock: false
+  AfterEnum: false
+  BeforeElse: true
+  SplitEmptyFunction: true
+  SplitEmptyRecord: true
+  SplitEmptyNamespace: true
+
+IncludeBlocks: Merge
