@@ -29,5 +29,5 @@ void Xbee::send(std::string data)
     char buffer[data.length() + 1];
     strcpy(buffer, data.c_str());
 
-    if (write(file_, buffer, sizeof(buffer)) < 0) perror("UART: failed to write data");
+    send(&buffer[0], sizeof(buffer));
 }

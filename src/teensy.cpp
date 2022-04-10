@@ -22,15 +22,35 @@ Teensy::Teensy() : file_(-1), isConfigured_(false)
 
     struct termios options;
     tcgetattr(file_, &options);
-    options.c_cflag = B115200 | CS8 | CREAD | CLOCAL;
-    options.c_iflag = IGNPAR | ICRNL;
+    options.c_cflag |= (B115200 | CS8 | CREAD | CLOCAL);
+    options.c_iflag |= IGNPAR | BRKINT;
     tcflush(file_, TCIFLUSH);
     tcsetattr(file_, TCSANOW, &options);
 }
 
 void Teensy::send(char* data, int size)
 {
+    // std::cout << "Data is getting sent to teensy ";
+    // for (int ii = 0; ii < size; ii++)
+    //     std::cout << data[ii];
+    // std::cout << std::endl;
     if (write(file_, data, size) < 0) perror("UART: failed to write data");
+}
+
+void Teensy::send(std::string data)
+{
+    // std::cout << "Sending " << data << " to teensy." << std::endl;
+    char buffer[data.length() + 1];
+    strcpy(buffer, data.c_str());
+
+    send(&buffer[0], sizeof(buffer));
+}
+
+void Teensy::flushBuffer()
+{
+    // usleep(2e6);
+    // tcflush(file_, TCIOFLUSH);
+    send("\r\n"); // TODO: Shouldn't have to do this at all. 
 }
 
 void Teensy::receive(float& x, float& y, float& z)
@@ -38,10 +58,11 @@ void Teensy::receive(float& x, float& y, float& z)
     char newByte;
     char data[255];
     int ii             = 0;
-    bool noMeasurement = true;
+    int timeoutCounter = 0;
 
-    while (noMeasurement)
+    while (true)
     {
+        timeoutCounter++;
         if (read(file_, &newByte, 1) > 0)
         {
             if (newByte == '\n' && ii > 0)
@@ -70,13 +91,32 @@ void Teensy::receive(float& x, float& y, float& z)
                     }
                 }
                 else
-                    std::cout << "Warning! data received that didn't haves 3 parameters. Returned 0." << std::endl;
-                // std::cout << "Parsed data: " << x << ", " << y << ", " << z << std::endl;
-                noMeasurement = false;
+                    std::cout << "Warning! data received that didn't haves 3 parameters only had " << v.size() <<
+                                 ". Returned 0." << std::endl;
+                flushBuffer();
                 return;
             }
             else
+            {
+                timeoutCounter = 0;
                 data[ii++] = newByte;
+            }
+        }
+
+        if (timeoutCounter > 1e6)
+        {
+            std::cout << "Teensy timed out on taking a sample!!!!!" << std::endl;
+            usleep(5e6);
+            flushBuffer();
+            break;
         }
     }
+}
+
+void Teensy::takeSample(float& x, float& y, float& z)
+{
+    send("!Sample\r\n");
+    usleep(1000);
+
+    receive(x, y, z);
 }

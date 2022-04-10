@@ -5,66 +5,45 @@
 #include "ktx134.hpp"
 #include "teensy.hpp"
 #include "xbee.hpp"
-#include <algorithm>
+#include <chrono>
 #include <fstream>
 #include <iostream>
-#include <math.h>
-#include <pthread.h>
 #include <stdint.h>
-#include <unistd.h>
 #include <vector>
+#include <Eigen/Dense>
+#include <ctime>
+ 
+using Eigen::MatrixXd;
 
-#define HEART_BEAT_FREQUENCY  100 // Hz
+#define HEART_BEAT_FREQUENCY  100.0 // Hz
+#define HEART_BEAT_PERIOD     1000.0 / HEART_BEAT_FREQUENCY
 #define HEART_BEAT_PIN_NUMBER 48
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // variables
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-pthread_t heartBeat_;
+// Sensor Objects
 LIS3MDL magnetometer_(2);
 PressureSensor staticPressureSensor_(2);
 PressureSensor pitotProbe_(1);
 KTX134::KTX134 accelerometer_(1);
 Xbee xbee_;
 Teensy teensy_;
-std::vector<float> accelMags_;
-std::ofstream outFile_;
-
 exploringBB::GPIO buzzer_(60);
 exploringBB::GPIO heartbeatPin_(HEART_BEAT_PIN_NUMBER);
 
-bool getMeasurement = false;
+// Output files
+std::ofstream outFile_;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Threaded functions
+// functions
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/// \brief Sends out pulse every specified time increment
-void* payloadHeartBeat(void* arg)
-{
-    for (;;)
-    {
-        heartbeatPin_.setValue(exploringBB::GPIO_VALUE::HIGH);
-        if (getMeasurement) std::cout << "Warning, missed an interrupt!" << std::endl;
-        getMeasurement = true;
-        usleep(1e6 / HEART_BEAT_FREQUENCY);
-        heartbeatPin_.setValue(exploringBB::GPIO_VALUE::LOW);
-        usleep(1e6 / HEART_BEAT_FREQUENCY);
-    }
-    return NULL;
-}
 
-float findMax(std::vector<float> data)
-{
-    float max = 0.0;
-    for (auto n : data)
-    {
-        if (std::fabs(n) > max) max = n;
-    }
-    return max;
-}
+/// \brief Returns True if all sensors are properly configured and output files have been created
+bool isConfiguredForFlight();
 
-bool isConfiguredForFlight()
-{
-    return staticPressureSensor_.isConfigured() && pitotProbe_.isConfigured() && accelerometer_.isConfigured() &&
-           xbee_.isConfigured() && outFile_.is_open();
-}
+/// \brief prints the startup message to the terminal
+void printStartupConfig();
+
+/// \brief Initializes in inputs / outputs that need configured during bootup
+void initializePayload();
