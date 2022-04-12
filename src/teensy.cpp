@@ -22,8 +22,8 @@ Teensy::Teensy() : file_(-1), isConfigured_(false)
 
     struct termios options;
     tcgetattr(file_, &options);
-    options.c_cflag |= (B115200 | CS8 | CREAD | CLOCAL);
-    options.c_iflag |= IGNPAR | BRKINT;
+    options.c_cflag = (B115200 | CS8 | CREAD | CLOCAL);
+    options.c_iflag = IGNPAR | ICRNL;
     tcflush(file_, TCIFLUSH);
     tcsetattr(file_, TCSANOW, &options);
 }
@@ -50,7 +50,10 @@ void Teensy::flushBuffer()
 {
     // usleep(2e6);
     // tcflush(file_, TCIOFLUSH);
-    send("\r\n"); // TODO: Shouldn't have to do this at all. 
+
+    // TODO: Shouldn't have to do this at all. This clears the data out of what ever buffer its stuck in
+    // Teensy will receive a measurement when this happens instead of nothing
+    send("\r\n");
 }
 
 void Teensy::receive(float& x, float& y, float& z)
@@ -115,7 +118,7 @@ void Teensy::receive(float& x, float& y, float& z)
 
 void Teensy::takeSample(float& x, float& y, float& z)
 {
-    send("!Sample\r\n");
+    send("!Sample");
     usleep(1000);
 
     receive(x, y, z);

@@ -59,9 +59,10 @@ int main()
             meas.dynamicPressure = pitotProbe_.getPressure();
             accelerometer_.readState(meas.accelX, meas.accelY, meas.accelZ);
             teensy_.takeSample(meas.gyroX, meas.gyroY, meas.gyroZ);
-            // std::cout << "Time: " << timeStamp << " => " << meas.toString();
+            std::cout << "Time: " << timeStamp << " => " << meas.toString();
             outFile_ << timeStamp << "," << meas.toCsv();
             outFile_.flush();
+            usleep(30e6);
 
             mag = pow(pow(meas.accelX, 2) + pow(meas.accelY, 2) + pow(meas.accelZ, 2), 0.5);
 
@@ -78,7 +79,6 @@ int main()
                     std::string msg = "Landing Detected, through arduioius computation it has been determined that you" 
                                        "are in grid square A12. If not in grid square A12, please move there.\r\n";
                                       
-                    std::cout << "Landing detected" << std::endl;
                     std::cout << msg;
                     xbee_.send(msg);
                 }
