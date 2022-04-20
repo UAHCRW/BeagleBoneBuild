@@ -35,7 +35,7 @@ namespace KTX134
         writeRegister((uint16_t)RegisterMap::CNTL1, val);
     }
 
-    bool KTX134::readState(float& x, float& y, float& z)
+    bool KTX134::readState(Measurement& meas)
     {
         uint8_t buff[6]{0};
         readRegisters((uint16_t)RegisterMap::XOUT_L, buff, 6);
@@ -43,17 +43,21 @@ namespace KTX134
         uint16_t tempVal = 0;
         tempVal |= buff[0];
         tempVal |= ((uint16_t)buff[1]) << 8;
-        x = (float)((int16_t)tempVal) * convRange32G * 9.80665;
+        meas.accel[0] = (float)((int16_t)tempVal) * convRange32G * 9.80665;
 
         tempVal = 0;
         tempVal |= buff[2];
         tempVal |= ((uint16_t)buff[3]) << 8;
-        y = (float)((int16_t)tempVal) * convRange32G * 9.80665;
+        meas.accel[1] = (float)((int16_t)tempVal) * convRange32G * 9.80665;
 
         tempVal = 0;
         tempVal |= buff[4];
         tempVal |= ((uint16_t)buff[5]) << 8;
-        z = (float)((int16_t)tempVal) * convRange32G * 9.80665;
+        meas.accel[2] = (float)((int16_t)tempVal) * convRange32G * 9.80665;
+
+        // Got to rotate the accelerometers frame to match that of the gyro
+        meas.accel[0] = meas.accel[0] * -1.0;
+        meas.accel[1] = meas.accel[1] * -1.0;
 
         return true;
     }

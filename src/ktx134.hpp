@@ -3,6 +3,7 @@
 #include "I2CDevice.hpp"
 #include "stdint.h"
 #include <iostream>
+#include "measurement.hpp"
 
 #define KTX134_DEV_ADDR 0x1F
 
@@ -92,7 +93,7 @@ namespace KTX134
 
         bool isConfigured() { return configured_; }
 
-        bool readState(float& x, float& y, float& z);
+        bool readState(Measurement& meas);
 
         private:
         void initialize();

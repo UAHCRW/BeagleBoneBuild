@@ -1,4 +1,5 @@
 #include "teensy.hpp"
+#include <chrono>
 #include <fcntl.h>
 #include <iostream>
 #include <sstream>
@@ -24,7 +25,7 @@ Teensy::Teensy() : file_(-1), isConfigured_(false)
     tcgetattr(file_, &options);
     options.c_cflag = (B115200 | CS8 | CREAD | CLOCAL);
     options.c_iflag = IGNPAR | ICRNL;
-    tcflush(file_, TCIFLUSH);
+    tcflush(file_, TCIOFLUSH);
     tcsetattr(file_, TCSANOW, &options);
 }
 
@@ -53,7 +54,7 @@ void Teensy::flushBuffer()
 
     // TODO: Shouldn't have to do this at all. This clears the data out of what ever buffer its stuck in
     // Teensy will receive a measurement when this happens instead of nothing
-    send("\r\n");
+    send("\n");
 }
 
 void Teensy::receive(float& x, float& y, float& z)
@@ -95,7 +96,7 @@ void Teensy::receive(float& x, float& y, float& z)
                 }
                 else
                     std::cout << "Warning! data received that didn't haves 3 parameters only had " << v.size() <<
-                                 ". Returned 0." << std::endl;
+                                 ". Returned 0. " << ss.str() << std::endl;
                 flushBuffer();
                 return;
             }
@@ -109,17 +110,55 @@ void Teensy::receive(float& x, float& y, float& z)
         if (timeoutCounter > 1e6)
         {
             std::cout << "Teensy timed out on taking a sample!!!!!" << std::endl;
-            usleep(5e6);
             flushBuffer();
             break;
         }
     }
 }
 
-void Teensy::takeSample(float& x, float& y, float& z)
+void Teensy::takeSample(Measurement& meas)
 {
-    send("!Sample");
-    usleep(1000);
-
+    float x, y, z;
     receive(x, y, z);
+    meas.gyro[0] = x;
+    meas.gyro[1] = y;
+    meas.gyro[2] = z;
+
+    meas.gyro = meas.gyro * M_PI / 180.0;
+}
+
+void Teensy::requestSample()
+{
+    send("!\n");
+}
+
+bool Teensy::checkConfiguration()
+{
+    send("#\n");
+    std::chrono::system_clock::time_point startTime = std::chrono::system_clock::now();
+
+    for (;;)
+    {
+        double passedSeconds = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now() - startTime).count();
+
+        if (passedSeconds > 30)
+        {
+            std::cout << "Teensy never responded to call. " << std::endl;
+            isConfigured_ = false;
+            flushBuffer();
+            return false;
+        }
+
+        char newByte;
+        if (read(file_, &newByte, 1) > 0)
+        {
+            if (newByte == '#')
+            {
+                flushBuffer();
+                isConfigured_ = true;
+                return true;
+            }
+        }
+    }
+    
 }
